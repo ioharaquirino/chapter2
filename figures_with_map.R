@@ -3,7 +3,7 @@
 setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
 setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") #PC trabalho
 
-# Load your data
+# Load my data
 
 mackerel_plotter_data <- read.csv("mackerel_data.csv")
 
