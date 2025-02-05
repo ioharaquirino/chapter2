@@ -330,7 +330,7 @@ ICES_Areas<- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
 data_sf <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326) 
 
 data_filtered <- data_sf %>%
-  filter(year %in% c(2020) & month %in% c(9, 10, 11))
+  filter(year %in% c(2023) & month %in% c(1, 4, 8, 9, 10, 11, 12))
 
 
 #Mapa
@@ -343,10 +343,10 @@ ggplot() +
   geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
   
   # Camada com os pontos de towings filtrados
-  geom_sf(data = data_filtered, aes(color = as.factor(month)), size = 2, alpha = 0.8) +  # `size` para pontos
+  geom_sf(data = data_filtered, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +  # `size` para pontos
   
   # Paleta de cores refinada para os meses
-  scale_color_viridis_d(option = "C", name = "Month") +
+  scale_color_viridis_d(option = "A", name = "Month") +
   
   # Tema mais estilizado
   theme_minimal() +
@@ -364,7 +364,7 @@ ggplot() +
   ) +
   
   # Títulos informativos
-  ggtitle("Fishing Hauls - Autumn 2020") +
+  ggtitle("Towings - 2023") +
   
   # Escala e seta norte mais refinadas
   annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +  # Escala no canto inferior esquerdo
@@ -380,6 +380,102 @@ ggplot() +
   
   # Ajuste dos limites para um visual refinado
   coord_sf(xlim = c(-7, 7), ylim = c(54, 63))  # Zoom ajustado para o Reino Unido e arredores
+
+
+#.
+#.
+#.
+
+### Modificando agora todo o código os meses pelos VESSELS ###
+
+# Load your data
+mackerel_towing_data <- read.csv("mackerel_data.csv")
+
+# Necessary packages
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggspatial)
+
+# Mapa do mundo e países relevantes
+world <- ne_countries(scale = "medium", returnclass = "sf")  # Mapa do mundo
+europe <- world[world$continent == "Europe", ]              # Mapa da Europa
+
+# Inclui Reino Unido e países vizinhos (incluindo Noruega)
+uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France", 
+                                        "Belgium", "Netherlands", "Germany", "Norway"), ] 
+
+# Converter os dados para sf (Simple Features)
+data_sf <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326)
+
+# Filtrar os dados por ano e embarcação, se necessário
+data_filtered <- data_sf %>%
+  filter(year %in% c(2021) & VE_ID =="22")  # Filtrar apenas o ano de interesse (2004)
+
+# Carregar o shapefile do ICES
+ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
+
+# Mapa
+ggplot() +
+  # Camada do mapa base com preenchimento e contornos personalizados
+  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", size = 0.3) +
+  
+  # Camada do ICES Statistical Areas com contornos
+  geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
+  
+  # Camada com os pontos de towings por embarcação
+  geom_sf(data = data_filtered, aes(color = as.factor(VE_ID)), size = 1, alpha = 0.8) +  # `vessel` no lugar de `month`
+  
+  # Paleta de cores refinada para as embarcações
+  scale_color_viridis_d(option = "A", name = "Vessel") +
+  
+  # Tema mais estilizado
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "lightblue", color = NA),  # Fundo do mapa em azul claro
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),  # Linhas de grade suaves
+    panel.grid.minor = element_blank(),                                # Remove linhas menores
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),  # Título centralizado e em negrito
+    plot.subtitle = element_text(size = 12, hjust = 0.5),              # Subtítulo menor
+    legend.position = "right",                                         # Legenda à direita
+    legend.title = element_text(face = "bold"),                        # Título da legenda em negrito
+    legend.background = element_rect(fill = "white", color = NA),      # Fundo branco para a legenda
+    axis.title = element_blank(),                                     # Remove os rótulos dos eixos
+    axis.text = element_text(size = 10)                               # Texto dos eixos mais legível
+  ) +
+  
+  # Títulos informativos
+  ggtitle("Towings by Vessel - 2021") +
+  
+  # Escala e seta norte mais refinadas
+  annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +  # Escala no canto inferior esquerdo
+  
+  # Seta do norte clássica no canto superior esquerdo
+  annotation_north_arrow(
+    location = "tl",  # Top left (esquerda superior)
+    which_north = "true",  # Norte verdadeiro
+    pad_x = unit(0.5, "cm"),  # Espaçamento horizontal
+    pad_y = unit(0.5, "cm"),  # Espaçamento vertical
+    style = north_arrow_fancy_orienteering()  # Estilo clássico
+  ) +
+  
+  # Ajuste dos limites para um visual refinado
+  coord_sf(xlim = c(-7, 7), ylim = c(54, 63))  # Zoom ajustado para o Reino Unido e arredores
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
