@@ -119,13 +119,13 @@ ggplot(data = uk_neighbors) +
 # Mapas do self-sampling #
 
 # abrindo o diretorio de trabalho
-setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD_chapters/chapter_2") #PC pessoal
+setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") #PC trabalho
 
 
 # Load your data
 
-mack_selfs_2021_winter <- read.csv("mackerel_winter2021_cuts.csv")
+mack_selfs_2024_winter <- read.csv("mackerel_haul_winter_2024.csv")
 
 
 # Necessary packages 
@@ -146,7 +146,7 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Including Norway
 
 
-data_sf <- st_as_sf(mack_selfs_2021_winter, coords = c("londd", "latdd"), crs = 4326) # Converting data to sf
+data_sf <- st_as_sf(mack_selfs_2024_winter, coords = c("londd", "latdd"), crs = 4326) # Converting data to sf
 # sf (simple features) to deal with geographic information, part of me the main tool to manipulate spacial data in R
 
 
@@ -164,6 +164,7 @@ library(viridis)
 
 library(sf)
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas") #PC trabalho
+setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
 
 # Load the ICES shapefile (update with the correct path)
 ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
@@ -201,7 +202,7 @@ ggplot() +
   ) +
   
   # Title
-  ggtitle("Fishing Hauls - Winter 2021") +
+  ggtitle("Fishing Hauls - Winter 2024") +
   
   # Theme and aesthetics
   theme_minimal() +
@@ -231,7 +232,7 @@ ggplot() +
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") #PC trabalho
 
 # Load your data
-mack_selfs_2021_winter <- read.csv("mackerel_winter2021_cuts.csv")
+mack_selfs_2024_winter <- read.csv("mackerel_haul_winter_2024.csv")
 
 # Necessary packages 
 library(ggplot2)
@@ -252,7 +253,7 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] 
 
 # Convert data to an sf object (Simple Features) to work with spatial data
-data_sf <- st_as_sf(mack_selfs_2021_winter, coords = c("londd", "latdd"), crs = 4326)
+data_sf <- st_as_sf(mack_selfs_2024_winter, coords = c("londd", "latdd"), crs = 4326)
 
 # Bounding box (useful for auto-adjusting zoom if needed)
 bbox <- st_bbox(data_sf)
@@ -299,7 +300,7 @@ ggplot() +
   ) +
   
   # Informative title
-  ggtitle("Fishing Hauls by Vessel - Winter 2021") +
+  ggtitle("Fishing Hauls by Vessel - Winter 2024") +
   
   # Scale bar and north arrow
   annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +  # Scale in bottom-left
