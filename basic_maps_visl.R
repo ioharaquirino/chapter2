@@ -1,17 +1,22 @@
+
+# First version of map code #
+
 # abrindo o diretorio de trabalho
 
-setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
-setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") #PC trabalho
+setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") # Personal laptop
+setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") # Work laptop
 
 # Load my data
 
 mackerel_plotter_data <- read.csv("mackerel_data.csv")
 
-install.packages(c("ggplot2", "sf", "ggspatial", "rnaturalearth", "rnaturalearthdata"))
+# Installing some packages if needed #
 
+install.packages(c("ggplot2", "sf", "ggspatial", "rnaturalearth", "rnaturalearthdata"))
 install.packages("rnaturalearth")
 install.packages("rnaturalearthdata")
 install.packages("sf")
+
 
 library(rnaturalearth)
 library(rnaturalearthdata)
@@ -20,22 +25,32 @@ library(ggplot2)
 library(ggspatial)
 library(dplyr)
 
-world <- ne_countries(scale = "medium", returnclass = "sf") #mapa mundo
+# Base map #
 
-europe <- world[world$continent == "Europe", ] #mapa europa
+world <- ne_countries(scale = "medium", returnclass = "sf") # Load world map
+
+europe <- world[world$continent == "Europe", ] # Load Europe map
 
 uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France", 
-                                        "Belgium", "Netherlands", "Germany"), ] #apenas UK e vizinhos
+                                        "Belgium", "Netherlands", "Germany"), ]
 
 
 data_sf <- st_as_sf(data_novmackerel, coords = c("lon", "lat"), crs = 4326)
 
 bbox <- st_bbox(data_sf)
 
-# Filtrar os dados para o intervalo de anos desejado
+
+# Filtering for specic years
+
 data_filtered <- data_sf %>% 
   filter(year >= 2019 & year <= 2023)
 
+# Specific year, use:
+
+data_filtered <- data_sf %>% 
+  filter(year == 2022)
+
+# Map #
 
 ggplot(data = uk_neighbors) +
   geom_sf() +  # Mapa base
@@ -49,44 +64,19 @@ ggplot(data = uk_neighbors) +
   coord_sf(xlim = c(bbox[1], bbox[3]), ylim = c(bbox[2], bbox[4]))  # Ajuste automático dos limites com a bounding box
 
 
+# Adding analysis of the map per vessel to understand possibles outliers #
 
-
-
-#### Adding analysis of the map per vessel to understand possibles outliers #### 
-
-world <- ne_countries(scale = "medium", returnclass = "sf") #mapa mundo
-
-europe <- world[world$continent == "Europe", ] #mapa europa
-
-uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France", 
-                                        "Belgium", "Netherlands", "Germany", "Norway"), ] #apenas UK e vizinhos
-
-
-data_sf <- st_as_sf(data_mackerel, coords = c("lon", "lat"), crs = 4326)
-
-bbox <- st_bbox(data_sf)
-
-# Filtrar os dados para o intervalo de anos desejado
-data_filtered <- data_sf %>% 
-  filter(year >= 2019 & year <= 2023) 
-
-#Or
-
-#Para ano especifico, use:
-data_filtered <- data_sf %>% 
-  filter(year == 2022)
-
-
-# Filtrar os dados para os vessels desejados
 data_filtered <- data_filtered %>%
-  filter(VE_ID %in% c(2, 8, 9, 11)) # mais de um vessel
+  filter(VE_ID %in% c(2, 8, 9, 11)) # more than 1 vessel
 
 #Or
 
-# Filtrar os dados para apenas UM vessel
+# Use just 1 vessel
+
 data_filtered <- data_filtered %>%
   filter(VE_ID == 22) 
 
+# Map with the facet by vessel
 
 ggplot(data = uk_neighbors) +
   geom_sf() +  # Base map
@@ -101,26 +91,16 @@ ggplot(data = uk_neighbors) +
   facet_wrap(~ VE_ID)  # Facet by vessel
 
 
-###
-
-
 # Novas figuras - Adicionando Noruega, retângulos do ICES e comparando diferentes tipos de dados (self-sampling data vs plotter data)
 
-# Eu escolhi o ano de 2020 para começar as análises de comparação entre Plotter e Self-sampling data por ser o ano com mais observações do Plotter data
-
 # Variáveis utilizadas para criação de mapas: Latitude, longitude e mês.
-
-# Self-sampling data: Ano 2020; Mackerel outono; Setembro, Outubro e Novembro
-
-# Corte do Plotter data para comparação: Ano 2020 apenas pesca de Setembro, Outubro e Novembro
-
 
 
 # Mapas do self-sampling #
 
 # abrindo o diretorio de trabalho
 setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
-setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") #PC trabalho
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2") #PC trabalho
 
 
 # Load your data
@@ -509,11 +489,6 @@ ggplot() +
 
 
 plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Checking Data Distribution 2023 autumn") # CHECKING DATA DISTRIBUTION
-
-
-
-
-
 
 
 
