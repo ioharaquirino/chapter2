@@ -125,7 +125,7 @@ setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter
 
 # Load your data
 
-mack_selfs_2024_winter <- read.csv("mackerel_haul_winter_2024.csv")
+mack_selfs_2023_autumn <- read.csv("INTERNAL_QC_MACautumn23_HAUL_21.05.csv")
 
 
 # Necessary packages 
@@ -146,7 +146,7 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Including Norway
 
 
-data_sf <- st_as_sf(mack_selfs_2024_winter, coords = c("londd", "latdd"), crs = 4326) # Converting data to sf
+data_sf <- st_as_sf(mack_selfs_2023_autumn, coords = c("londd", "latdd"), crs = 4326) # Converting data to sf
 # sf (simple features) to deal with geographic information, part of me the main tool to manipulate spacial data in R
 
 
@@ -202,7 +202,7 @@ ggplot() +
   ) +
   
   # Title
-  ggtitle("Fishing Hauls - Winter 2024") +
+  ggtitle("Fishing Hauls - Winter 2023") +
   
   # Theme and aesthetics
   theme_minimal() +
@@ -232,7 +232,7 @@ ggplot() +
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") #PC trabalho
 
 # Load your data
-mack_selfs_2024_winter <- read.csv("mackerel_haul_winter_2024.csv")
+mack_selfs_2023_winter <- read.csv("INTERNAL_QC_MACwinter23_HAUL_24.05.csv")
 
 # Necessary packages 
 library(ggplot2)
@@ -253,7 +253,7 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] 
 
 # Convert data to an sf object (Simple Features) to work with spatial data
-data_sf <- st_as_sf(mack_selfs_2024_winter, coords = c("londd", "latdd"), crs = 4326)
+data_sf <- st_as_sf(mack_selfs_2023_winter, coords = c("londd", "latdd"), crs = 4326)
 
 # Bounding box (useful for auto-adjusting zoom if needed)
 bbox <- st_bbox(data_sf)
@@ -279,7 +279,7 @@ ggplot() +
   geom_sf(data = ICES_Areas, color = "black", fill = NA, size = 0.2, linetype = "dashed") +
   
   # Haul points colored by vessel
-  geom_sf(data = data_filtered, aes(color = as.factor(vessel)), size = 1.5, alpha = 0.8) +  # Changed from `month` to `vessel`
+  geom_sf(data = data_filtered, aes(color = as.factor(vessel)), size = 1, alpha = 0.8) +  # Changed from `month` to `vessel`
   
   # Refined color palette for vessels
   scale_color_viridis_d(option = "C", name = "vessel") +  # Legend now refers to vessels
@@ -300,7 +300,7 @@ ggplot() +
   ) +
   
   # Informative title
-  ggtitle("Fishing Hauls by Vessel - Winter 2024") +
+  ggtitle("Fishing Hauls by Vessel - Winter 2023") +
   
   # Scale bar and north arrow
   annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +  # Scale in bottom-left
@@ -506,6 +506,9 @@ ggplot() +
 
 
 
+
+
+plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Checking Data Distribution 2023 autumn") # CHECKING DATA DISTRIBUTION
 
 
 
