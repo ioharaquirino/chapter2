@@ -302,16 +302,29 @@ ggplot() +
 #.
 
 
-# Mapas Plotter Data para comparação #
+# MAPS PLOTTER DATA #
 
 
 # abrindo o diretorio de trabalho
 setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") #PC trabalho
+
+
+# First, I want to create different dataset per year
+
+unique (mackerel_towing_data$year) # Check unique values in variable
+
+data_by_year <- split(mackerel_towing_data, mackerel_towing_data$year) # Splitting by year
+
+for(year in names (data_by_year)) {
+  separated_years <- paste0("mackerel_towing_data", year, ".csv")
+  write.csv (data_by_year[[year]], file = separated_years, row.names = FALSE)
+}
 
 
 # Load your data
 
-mackerel_towing_data <- read.csv("mackerel_data.csv")
+mackerel_towing_data_2005 <- read.csv("mackerel_towing_data2005.csv")
 
 
 # Necessary packages 
@@ -322,7 +335,11 @@ library(dplyr)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(ggspatial)
+library(ggrepel)  # To label countries
+library(viridis)
 
+
+# Map
 
 world <- ne_countries(scale = "medium", returnclass = "sf") # Mapa do mundo; filtrar países relevantes
 
@@ -332,74 +349,80 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Inclui Noruega
 
 
-data_sf <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
+data_sf <- st_as_sf(mackerel_towing_data_2005, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
 
 
-bbox <- st_bbox(data_sf) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
+bbox_data <- st_bbox(data_sf) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
+
+# Define your desired coastal area (adjust these numbers as needed)
+norway_coast_bbox <- c(xmin = 4, xmax = 6, ymin = 58, ymax = 63)
+
+# Create a union bounding box that covers both the data and your desired coastal region
+final_bbox <- c(
+  xmin = min(bbox_data["xmin"], norway_coast_bbox["xmin"]),
+  xmax = max(bbox_data["xmax"], norway_coast_bbox["xmax"]),
+  ymin = min(bbox_data["ymin"], norway_coast_bbox["ymin"]),
+  ymax = max(bbox_data["ymax"], norway_coast_bbox["ymax"])
+)
+
+
+plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2005") # CHECKING DATA DISTRIBUTION
 
 
 # Mapa Plotter já com o shapefile do ICES
 
 
-# Substitua pelo caminho para o seu arquivo .shp
+# Set working directory for the ICES shapefile (use the correct one for your machine)
+setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas")  # PC trabalho
+setwd("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2")  # PC pessoal
+
 
 ICES_Areas<- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
 
+head(ICES_Areas)
+summary(ICES_Areas)
+st_crs(ICES_Areas)  # Check coordinate system
+ICES_Areas <- st_make_valid(ICES_Areas) 
+
 
 # Transformar data_sf em um objeto sf usando as colunas de longitude e latitude
-data_sf <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326) 
+data_sf <- st_as_sf(mackerel_towing_data_2005, coords = c("lon", "lat"), crs = 4326) 
 
-data_filtered <- data_sf %>%
-  filter(year %in% c(2023) & month %in% c(1, 4, 8, 9, 10, 11, 12))
+data_filtered <- data_sf
 
 
 #Mapa
 
+# Now, the map with ICES added
 ggplot() +
-  # Camada do mapa base com preenchimento e contornos personalizados
-  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", size = 0.3) +
-  
-  # Camada do ICES Statistical Areas com contornos
+  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
   geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
-  
-  # Camada com os pontos de towings filtrados
-  geom_sf(data = data_filtered, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +  # `size` para pontos
-  
-  # Paleta de cores refinada para os meses
-  scale_color_viridis_d(option = "A", name = "Month") +
-  
-  # Tema mais estilizado
+  geom_sf(data = data_filtered, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +
+  scale_color_manual(values = c("red", "orange", "purple", "yellow","magenta", "green", "lightsalmon3", "indianred3", "plum4"), name = "Month") +
+  annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
+  annotation_north_arrow(
+    location = "tl",
+    which_north = "true",
+    pad_x = unit(0.5, "cm"),
+    pad_y = unit(0.5, "cm"),
+    style = north_arrow_fancy_orienteering()
+  ) +
+  ggtitle("Towings - 2005") +
   theme_minimal() +
   theme(
-    panel.background = element_rect(fill = "lightblue", color = NA),  # Fundo do mapa em azul claro
-    panel.grid.major = element_line(color = "white", linewidth = 0.2),  # Linhas de grade suaves com `linewidth`
-    panel.grid.minor = element_blank(),                                # Remove linhas menores
-    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),  # Título centralizado e em negrito
-    plot.subtitle = element_text(size = 12, hjust = 0.5),              # Subtítulo menor
-    legend.position = "right",                                         # Legenda à direita
-    legend.title = element_text(face = "bold"),                        # Título da legenda em negrito
-    legend.background = element_rect(fill = "white", color = NA),      # Fundo branco para a legenda
-    axis.title = element_blank(),                                     # Remove os rótulos dos eixos
-    axis.text = element_text(size = 10)                               # Texto dos eixos mais legível
+    panel.background = element_rect(fill = "lightblue", color = NA),
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.background = element_rect(fill = "white", color = NA),
+    axis.title = element_blank(),
+    axis.text = element_text(size = 10)
   ) +
-  
-  # Títulos informativos
-  ggtitle("Towings - 2023") +
-  
-  # Escala e seta norte mais refinadas
-  annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +  # Escala no canto inferior esquerdo
-  
-  # Seta do norte clássica no canto superior esquerdo
-  annotation_north_arrow(
-    location = "tl",  # Top left (esquerda superior)
-    which_north = "true",  # Norte verdadeiro
-    pad_x = unit(0.5, "cm"),  # Espaçamento horizontal
-    pad_y = unit(0.5, "cm"),  # Espaçamento vertical
-    style = north_arrow_fancy_orienteering()  # Estilo clássico
-  ) +
-  
-  # Ajuste dos limites para um visual refinado
-  coord_sf(xlim = c(-7, 7), ylim = c(54, 63))  # Zoom ajustado para o Reino Unido e arredores
+  coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
+           ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
 
 
 #.
@@ -487,10 +510,11 @@ ggplot() +
 
 
 
+# Extra 
 
 plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Checking Data Distribution 2023 autumn") # CHECKING DATA DISTRIBUTION
 
-
+unique (data$column) # Check unique values in variable
 
 
 
