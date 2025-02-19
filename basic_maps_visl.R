@@ -324,7 +324,7 @@ for(year in names (data_by_year)) {
 
 # Load your data
 
-mackerel_towing_data_2005 <- read.csv("mackerel_towing_data2005.csv")
+mackerel_towing_data_2006 <- read.csv("mackerel_towing_data2006.csv")
 
 
 # Necessary packages 
@@ -349,7 +349,7 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Inclui Noruega
 
 
-data_sf <- st_as_sf(mackerel_towing_data_2005, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
+data_sf <- st_as_sf(mackerel_towing_data_2006, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
 
 
 bbox_data <- st_bbox(data_sf) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
@@ -366,7 +366,7 @@ final_bbox <- c(
 )
 
 
-plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2005") # CHECKING DATA DISTRIBUTION
+plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2006") # CHECKING DATA DISTRIBUTION
 
 
 # Mapa Plotter já com o shapefile do ICES
@@ -386,7 +386,7 @@ ICES_Areas <- st_make_valid(ICES_Areas)
 
 
 # Transformar data_sf em um objeto sf usando as colunas de longitude e latitude
-data_sf <- st_as_sf(mackerel_towing_data_2005, coords = c("lon", "lat"), crs = 4326) 
+data_sf <- st_as_sf(mackerel_towing_data_2006, coords = c("lon", "lat"), crs = 4326) 
 
 data_filtered <- data_sf
 
@@ -407,7 +407,7 @@ ggplot() +
     pad_y = unit(0.5, "cm"),
     style = north_arrow_fancy_orienteering()
   ) +
-  ggtitle("Towings - 2005") +
+  ggtitle("Towings - 2006") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "lightblue", color = NA),
