@@ -310,6 +310,11 @@ setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") #PC trabalho
 
 
+# Load your data
+
+mackerel_towing_data_2024 <- read.csv("mackerel_towing_data2024.csv")
+
+
 # First, I want to create different dataset per year
 
 unique (mackerel_towing_data$year) # Check unique values in variable
@@ -320,11 +325,6 @@ for(year in names (data_by_year)) {
   separated_years <- paste0("mackerel_towing_data", year, ".csv")
   write.csv (data_by_year[[year]], file = separated_years, row.names = FALSE)
 }
-
-
-# Load your data
-
-mackerel_towing_data_2006 <- read.csv("mackerel_towing_data2006.csv")
 
 
 # Necessary packages 
@@ -349,7 +349,7 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Inclui Noruega
 
 
-data_sf <- st_as_sf(mackerel_towing_data_2006, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
+data_sf <- st_as_sf(mackerel_towing_data_2024, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
 
 
 bbox_data <- st_bbox(data_sf) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
@@ -366,7 +366,7 @@ final_bbox <- c(
 )
 
 
-plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2006") # CHECKING DATA DISTRIBUTION
+plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2024") # CHECKING DATA DISTRIBUTION
 
 
 # Mapa Plotter já com o shapefile do ICES
@@ -386,7 +386,7 @@ ICES_Areas <- st_make_valid(ICES_Areas)
 
 
 # Transformar data_sf em um objeto sf usando as colunas de longitude e latitude
-data_sf <- st_as_sf(mackerel_towing_data_2006, coords = c("lon", "lat"), crs = 4326) 
+data_sf <- st_as_sf(mackerel_towing_data_2024, coords = c("lon", "lat"), crs = 4326) 
 
 data_filtered <- data_sf
 
@@ -407,7 +407,7 @@ ggplot() +
     pad_y = unit(0.5, "cm"),
     style = north_arrow_fancy_orienteering()
   ) +
-  ggtitle("Towings - 2006") +
+  ggtitle("Towings - 2024") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "lightblue", color = NA),
@@ -506,6 +506,131 @@ ggplot() +
   
   # Ajuste dos limites para um visual refinado
   coord_sf(xlim = c(-7, 7), ylim = c(54, 63))  # Zoom ajustado para o Reino Unido e arredores
+
+#
+#
+#
+
+# Using facet_grid to compare different graphs of my data #
+
+# abrindo o diretorio de trabalho
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") #PC trabalho
+
+
+# Load your data
+
+mackerel_towing_data <- read.csv("MAC_towing_tracks.csv")
+
+
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggspatial)
+
+# 🔹 Criar o mapa base novamente
+world <- ne_countries(scale = "medium", returnclass = "sf")  # Mapa do mundo
+europe <- world[world$continent == "Europe", ]  # Mapa da Europa
+
+# 🔹 Criar o objeto uk_neighbors corretamente
+uk_neighbors <- world %>% 
+  filter(name %in% c("United Kingdom", "Ireland", "France", 
+                     "Belgium", "Netherlands", "Germany", "Norway"))
+
+# 🔹 Garantir que data_filtered seja um `sf`
+if (!inherits(mackerel_towing_data, "sf")) {
+  data_filtered <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326)
+}
+
+# 🔹 Criar a bounding box dos dados
+bbox_data <- st_bbox(data_filtered)
+
+# 🔹 Definir uma região costeira adicional (Noruega) para expandir a visualização
+norway_coast_bbox <- c(xmin = 4, xmax = 6, ymin = 58, ymax = 63)
+
+# 🔹 Criar um bounding box final que une os dois
+final_bbox <- c(
+  xmin = min(bbox_data["xmin"], norway_coast_bbox["xmin"]),
+  xmax = max(bbox_data["xmax"], norway_coast_bbox["xmax"]),
+  ymin = min(bbox_data["ymin"], norway_coast_bbox["ymin"]),
+  ymax = max(bbox_data["ymax"], norway_coast_bbox["ymax"])
+)
+
+# Set working directory for the ICES shapefile (use the correct one for your machine)
+setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas")  # PC trabalho
+
+
+ICES_Areas<- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
+
+head(ICES_Areas)
+summary(ICES_Areas)
+st_crs(ICES_Areas)  # Check coordinate system
+ICES_Areas <- st_make_valid(ICES_Areas) 
+
+
+# 🔹 Verificar e ajustar o nome correto da coluna do vessel
+print(colnames(data_filtered))  # Verifica os nomes das colunas para evitar erros
+
+vessel_column <- "VE_ID"  # Substitua pelo nome correto, se diferente
+
+# 🔹 Lista de todos os vessels únicos no dataset
+vessels <- unique(mackerel_towing_data[[vessel_column]])
+
+# 🔹 Loop para criar um gráfico por vessel
+for (v in vessels) {
+  
+  # Filtrar os dados apenas para o vessel atual e manter a geometria
+  vessel_data <- mackerel_towing_data %>% filter(.data[[vessel_column]] == v)
+  
+  # Garantir que a geometria foi mantida
+  if (!inherits(vessel_data, "sf")) {
+    vessel_data <- st_as_sf(vessel_data, coords = c("lon", "lat"), crs = 4326)
+  }
+  
+  # Criar o mapa para o vessel atual
+  p <- ggplot() +
+    geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
+    geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
+    geom_sf(data = vessel_data, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +
+    scale_color_manual(values = c("red", "orange", "purple", "yellow", "magenta", "green", "lightsalmon3", "indianred3", "plum4"), name = "Month") +
+    annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
+    annotation_north_arrow(
+      location = "tl",
+      which_north = "true",
+      pad_x = unit(0.5, "cm"),
+      pad_y = unit(0.5, "cm"),
+      style = north_arrow_fancy_orienteering()
+    ) +
+    ggtitle(paste("Towings | Vessel:", v)) +
+    
+    # Criar a matriz de gráficos para o vessel: mês (linha) x ano (coluna)
+    facet_grid(rows = vars(month), cols = vars(year)) +
+    
+    theme_minimal() +
+    theme(
+      panel.background = element_rect(fill = "lightblue", color = NA),
+      panel.grid.major = element_line(color = "white", linewidth = 0.2),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+      legend.position = "right",
+      legend.title = element_text(face = "bold"),
+      legend.background = element_rect(fill = "white", color = NA),
+      axis.title = element_blank(),
+      axis.text = element_text(size = 6),
+      strip.text = element_text(size = 7)
+    ) +
+    coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
+             ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
+  
+  # Exibir o gráfico para cada vessel
+  print(p)
+  
+  # Opcional: salvar cada gráfico como imagem
+  ggsave(filename = paste0("map_vessel_", v, ".png"), plot = p, width = 10, height = 8, dpi = 300)
+}
+
+
 
 
 
