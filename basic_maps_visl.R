@@ -518,9 +518,7 @@ setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter
 
 
 # Load your data
-
 mackerel_towing_data <- read.csv("MAC_towing_tracks.csv")
-
 
 library(ggplot2)
 library(sf)
@@ -538,7 +536,7 @@ uk_neighbors <- world %>%
   filter(name %in% c("United Kingdom", "Ireland", "France", 
                      "Belgium", "Netherlands", "Germany", "Norway"))
 
-# 🔹 Garantir que data_filtered seja um `sf`
+# 🔹 Garantir que os dados sejam um sf
 if (!inherits(mackerel_towing_data, "sf")) {
   data_filtered <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326)
 }
@@ -560,76 +558,172 @@ final_bbox <- c(
 # Set working directory for the ICES shapefile (use the correct one for your machine)
 setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas")  # PC trabalho
 
-
-ICES_Areas<- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
-
-head(ICES_Areas)
-summary(ICES_Areas)
-st_crs(ICES_Areas)  # Check coordinate system
-ICES_Areas <- st_make_valid(ICES_Areas) 
-
+ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
+ICES_Areas <- st_make_valid(ICES_Areas)  # Corrigir geometria se necessário
 
 # 🔹 Verificar e ajustar o nome correto da coluna do vessel
 print(colnames(data_filtered))  # Verifica os nomes das colunas para evitar erros
 
 vessel_column <- "VE_ID"  # Substitua pelo nome correto, se diferente
+year_column <- "year"  # Substitua pelo nome correto da coluna do ano, se necessário
 
-# 🔹 Lista de todos os vessels únicos no dataset
-vessels <- unique(mackerel_towing_data[[vessel_column]])
+# 🔹 Definir o vessel desejado e o intervalo de anos
+selected_vessel <- "8"  # 🔹 Substitua pelo nome do vessel desejado
+start_year <- 2019  # 🔹 Ano inicial
+end_year <- 2022 # 🔹 Ano final
 
-# 🔹 Loop para criar um gráfico por vessel
-for (v in vessels) {
-  
-  # Filtrar os dados apenas para o vessel atual e manter a geometria
-  vessel_data <- mackerel_towing_data %>% filter(.data[[vessel_column]] == v)
-  
-  # Garantir que a geometria foi mantida
-  if (!inherits(vessel_data, "sf")) {
-    vessel_data <- st_as_sf(vessel_data, coords = c("lon", "lat"), crs = 4326)
-  }
-  
-  # Criar o mapa para o vessel atual
-  p <- ggplot() +
-    geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
-    geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
-    geom_sf(data = vessel_data, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +
-    scale_color_manual(values = c("red", "orange", "purple", "yellow", "magenta", "green", "lightsalmon3", "indianred3", "plum4"), name = "Month") +
-    annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
-    annotation_north_arrow(
-      location = "tl",
-      which_north = "true",
-      pad_x = unit(0.5, "cm"),
-      pad_y = unit(0.5, "cm"),
-      style = north_arrow_fancy_orienteering()
-    ) +
-    ggtitle(paste("Towings | Vessel:", v)) +
-    
-    # Criar a matriz de gráficos para o vessel: mês (linha) x ano (coluna)
-    facet_grid(rows = vars(month), cols = vars(year)) +
-    
-    theme_minimal() +
-    theme(
-      panel.background = element_rect(fill = "lightblue", color = NA),
-      panel.grid.major = element_line(color = "white", linewidth = 0.2),
-      panel.grid.minor = element_blank(),
-      plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
-      legend.position = "right",
-      legend.title = element_text(face = "bold"),
-      legend.background = element_rect(fill = "white", color = NA),
-      axis.title = element_blank(),
-      axis.text = element_text(size = 6),
-      strip.text = element_text(size = 7)
-    ) +
-    coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
-             ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
-  
-  # Exibir o gráfico para cada vessel
-  print(p)
-  
-  # Opcional: salvar cada gráfico como imagem
-  ggsave(filename = paste0("map_vessel_", v, ".png"), plot = p, width = 10, height = 8, dpi = 300)
+#OR 
+
+selected_years <- c(2012, 2014:2017, 2023)
+
+
+# 🔹 Filtrar os dados apenas para o vessel e período de anos escolhidos
+vessel_data <- mackerel_towing_data %>% 
+  filter(.data[[vessel_column]] == selected_vessel & 
+           .data[[year_column]] >= start_year & 
+           .data[[year_column]] <= end_year)
+
+#OR
+vessel_data <- mackerel_towing_data %>% 
+  filter(.data[[vessel_column]] == selected_vessel & 
+           .data[[year_column]] %in% selected_years)
+
+
+# 🔹 Garantir que a geometria foi mantida
+if (!inherits(vessel_data, "sf")) {
+  vessel_data <- st_as_sf(vessel_data, coords = c("lon", "lat"), crs = 4326)
 }
 
+# 🔹 Criar o mapa para o vessel escolhido e período de anos
+p <- ggplot() +
+  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
+  geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
+  geom_sf(data = vessel_data, aes(color = as.factor(month)), size = 0.1, alpha = 0.3) +
+  scale_color_manual(values = c("red", "orange", "purple", "yellow", "magenta", "green", 
+                                "lightsalmon3", "indianred3", "plum4"), name = "Month") +
+  ggtitle(paste("Towings | Vessel:", selected_vessel, "| Years:", start_year, "-", end_year)) +
+  facet_grid(rows = vars(month), cols = vars(year)) +  # 🔹 Apenas os anos filtrados aparecerão
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "lightblue", color = NA),
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.background = element_rect(fill = "white", color = NA),
+    axis.title = element_blank(),
+    axis.text = element_text(size = 10),  # 🔹 Aumentar tamanho dos textos para melhor visualização
+    strip.text = element_text(size = 12)  # 🔹 Aumentar os títulos dos facets
+  ) +
+  coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
+           ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
+
+
+# Criar pasta para armazenar os mapas
+output_dir <- "fishing_maps"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# 🔹 Salvar o gráfico em alta qualidade (PNG, TIFF, PDF)
+
+ggsave(filename = file.path(output_dir, paste0("map_vessel_", selected_vessel, "_", start_year, "_", end_year, ".tiff")), 
+       plot = p, width = 16, height = 10, dpi = 600)
+
+cat("\n✅ O gráfico do vessel", selected_vessel, "para os anos", start_year, "a", end_year, "foi salvo na pasta 'fishing_maps'.\n")
+
+#
+#
+#
+
+# Overlapping Self-sampling data and Plotter Data #
+
+# abrindo o diretorio de trabalho para Plotter Data
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results")
+
+# Load Plotter Data 
+mackerel_towing_2018 <- read.csv("mackerel_towing_data2018.csv")
+
+
+# abrindo o diretorio de trabalho Self-sampling data
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") # Plotter Data diretorio
+
+# Load Self-sampling data 
+mackerel_hauls_2018 <- read.csv("mackerel_autumn2018_cuts.csv")
+
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggspatial)
+
+
+# Converter os dados para objeto sf, utilizando as colunas de longitude e latitude
+haul_sf <- st_as_sf(mackerel_hauls_2018, coords = c("londd", "latdd"), crs = 4326)
+towing_sf <- st_as_sf(mackerel_towing_2018, coords = c("lon", "lat"), crs = 4326)
+
+# Carregar o mapa base (mundo, Europa e países vizinhos)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+europe <- world[world$continent == "Europe", ]
+uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France", 
+                                        "Belgium", "Netherlands", "Germany", "Norway"), ]
+
+
+# Set working directory for the ICES shapefile (use the correct one for your machine)
+setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas")  # PC trabalho
+
+# Carregar o shapefile do ICES
+ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
+ICES_Areas <- st_make_valid(ICES_Areas)  # Corrige possíveis geometria inválidas
+
+# Se desejar, calcule a bounding box dos seus dados (opcional)
+bbox <- st_bbox(haul_sf)  # Por exemplo, a partir dos dados de haul
+
+# Criando o mapa com overlapping dos dois conjuntos:
+ggplot() +
+  # Mapa base com os países relevantes
+  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.01) +
+  
+  # Shapefile do ICES com contornos
+  geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.01, linetype = "dashed") +
+  
+  # Camada com os pontos de towing (triângulos azuis)
+  geom_sf(data = towing_sf, color = "purple3", shape = 17, size = 1.5, alpha = 0.05) +
+  
+  # Camada com os pontos de haul (círculos vermelhos)
+  geom_sf(data = haul_sf, color = "red", shape = 16, size = 1, alpha = 0.9) +
+  
+  # Título e legenda
+  ggtitle("2018 - Overlapping: Haul (red) vs Towing (blue)") +
+  
+  # Adicionando escala e seta norte
+  annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
+  annotation_north_arrow(
+    location = "tl",
+    which_north = "true",
+    pad_x = unit(0.5, "cm"),
+    pad_y = unit(0.5, "cm"),
+    style = north_arrow_fancy_orienteering()
+  ) +
+  
+  # Tema minimalista
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "lightblue", color = NA),
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.background = element_rect(fill = "white", color = NA),
+    axis.title = element_blank(),
+    axis.text = element_text(size = 10)
+  ) +
+  
+  # Ajuste dos limites do mapa (você pode usar limites fixos ou os da bounding box)
+  coord_sf(xlim = c(-7, 7), ylim = c(54, 63))
 
 
 
