@@ -1,4 +1,4 @@
-# Explorando dados com mais detalhes por ano #
+# Explorando dados com mais detalhes #
 
 # Plotting with differents days appearing on subset #
 
@@ -60,42 +60,49 @@ ggplot() +
 
 # Transformar datetime na classe POSIXct
 
-class(mack_subset2$datetime)
+# abrindo o diretorio de trabalho
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Figures/Towing_figures/vessel_10") #PC trabalho
+
+# Load your data
+
+v10_2017_subset1 <- read.csv("v10_2017_subset1.csv")
+
+
+class(v10_2017_subset1$datetime)
 
 library(lubridate)
 
-mack_subset2$datetime <- ymd_hms(mack_subset2$datetime)  # If format is "YYYY-MM-DD HH:MM:SS"
+v10_2017_subset1$datetime <- ymd_hms(v10_2017_subset1$datetime)  # If format is "YYYY-MM-DD HH:MM:SS"
 
-class(mack_subset2$datetime) #to check
+class(v10_2017_subset1$datetime) #to check
 
 library(dplyr)
 
+
 # Separate datetime into date and time columns
-data <- mack_subset2 %>%
+
+data <- v10_2017_subset1 %>%
   mutate(date = as.Date(datetime),  # Extracts date
          time = format(datetime, "%H:%M:%S"))  # Extracts time as character
 
 # View result
 print(data)
 
-write.csv(data, "mack_subset2_date_time.csv", row.names = FALSE)
+write.csv(data, "v10_2017_subset1_datetime.csv", row.names = FALSE)
 
 #
 #
 #
 
+# Exploring subsets
 # Working with heading #
-
-# abrindo o diretorio de trabalho
-setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Figures/Towing_figures/year 2004") #PC trabalho
 
 # Load your data
 
-mackerel_1 <- read.csv("mack_subset1_heading_diff.csv")
-
+v10_2017_subset1 <- read.csv("v10_2017_subset1_datetime.csv")
 
 # Ver estatísticas descritivas dos dados de steaming
-summary(mackerel_2[, c("speed_kn", "heading")])
+summary(v10_2017_subset1[, c("speed_kn", "heading")])
 
 # Comparar com os dados gerais (mackerel_towing_data_2004)
 summary(mackerel_towing_data_2004[, c("speed_kn", "heading")])
@@ -105,8 +112,8 @@ library(ggplot2)
 
 # Histograma de heading (steaming vs. geral)
 ggplot() +
-  geom_histogram(data = mackerel_towing_2004, aes(x = heading), fill = "blue", alpha = 0.5, bins = 30) +
-  ggtitle("Heading - 2004 - All points") +
+  geom_histogram(data = v10_2017_subset1, aes(x = heading), fill = "blue", alpha = 0.5, bins = 30) +
+  ggtitle("Heading - Vessel 10 - 2017 - subset 1") +
   theme_minimal()
 
 
@@ -121,32 +128,83 @@ ggplot() +
 library(dplyr)
 
 # Ordenar os dados por vessel, dia e tempo (se houver variável de tempo)
-mackerel_1 <- mackerel_1 %>%
+v10_2017_subset1 <- v10_2017_subset1 %>%
   arrange(VE_ID, date, time) %>%  # Ajuste "date" e "time" para os nomes reais das colunas
   group_by(VE_ID, date) %>%  # Agrupar por vessel e dia
   mutate(heading_diff = abs(heading - lag(heading))) %>%  # Diferença absoluta entre dois pontos consecutivos
   ungroup()
 
 # Exibir os primeiros valores calculados
-head(mackerel_1[, c("VE_ID", "date", "heading", "heading_diff")])
+head(v10_2017_subset1[, c("VE_ID", "date", "heading", "heading_diff")])
 
-write.csv(mackerel_1, "mack_subset1_heading_diff.csv", row.names = FALSE)
+write.csv(v10_2017_subset1, "v10_2017_subset1_heading_diff.csv", row.names = FALSE)
 
 
 # Heading_diff summary for specific days #
 
+# abrindo o diretorio de trabalho
+
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Figures/Towing_figures/vessel_10") #PC trabalho
+
+# Load your data
+
+v10_2017_subset1_heading_diff <- read.csv("v10_2017_subset1_heading_diff.csv")
+
+
 library(dplyr)
 
 # Define the specific date you want to analyze
-specific_date <- "17/10/2004"  # Change to the date you need
+specific_date <- "2017-10-11"  # Change to the date you need
 
 # Filter data for that specific date and summarize heading_diff
-summary(mackerel_1 %>% filter(date == specific_date) %>% select(heading_diff))
+summary(v10_2017_subset1_heading_diff %>% filter(date == specific_date) %>% select(heading_diff))
 
 # Summary specific day but cutting outlier #
 
-summary(mackerel_2 %>% filter(date == "02/10/2004" & heading_diff < 10) %>% select(heading_diff))
+summary(v2_2017_subset1 %>% filter(date == "02/10/2004" & heading_diff < 10) %>% select(heading_diff))
 
+# Boxplot - Heading variation per day 
+
+ggplot(v10_2017_subset1_heading_diff, aes(x = as.factor(date), y = heading)) +
+  geom_boxplot(fill = "lightblue", color = "black", outlier.color = "red") +
+  labs(title = "Daily Variation in heading_diff v10 2017 subset1",
+       x = "Date",
+       y = "Heading (degrees)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme_minimal()
+
+
+# Detecting consecutive points with low heading_diff
+
+library(dplyr)
+
+# Order the data correctly (VERY IMPORTANT for correct sequence detection)
+v10_2017_subset1_heading_diff <- v10_2017_subset1_heading_diff%>%
+  arrange(VE_ID, date, time)
+
+# Identify if each row meets the steaming condition (e.g., `heading_diff < 20`)
+v10_2017_subset1_heading_diff <- v10_2017_subset1_heading_diff %>%
+  mutate(steaming_flag = heading_diff < 20)  # Adjust threshold as needed
+
+# Detect consecutive steaming sequences
+rle_result <- rle(v10_2017_subset1_heading_diff$steaming_flag)  
+
+# Convert the run-length encoding result into a dataframe
+steaming_sequences <- data.frame(
+  value = rle_result$values,
+  length = rle_result$lengths
+)
+
+# Add an index column to track positions in the dataset
+steaming_sequences$end_index <- cumsum(steaming_sequences$length)  
+steaming_sequences$start_index <- steaming_sequences$end_index - steaming_sequences$length + 1  
+
+# Filter only long steaming sequences (e.g., sequences where `steaming_flag == TRUE` and length > 3)
+long_steaming <- steaming_sequences %>%
+  filter(value == TRUE & length >= 3)
+
+# View the rows where long steaming sequences occur
+print(long_steaming)
 
 #
 #
@@ -202,10 +260,6 @@ mackerel_1 %>%
             min_distance_diff = min(distance_m, na.rm = TRUE),
             max_distance_diff = max(distance_m, na.rm = TRUE),
             count = n())
-
-
-
-
 
 
 
