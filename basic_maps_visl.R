@@ -103,7 +103,7 @@ setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2") #PC trabalho
 
 
-# Load your data
+# Load my data
 
 mack_selfs_2023_autumn <- read.csv("INTERNAL_QC_MACautumn23_HAUL_21.05.csv")
 
@@ -211,7 +211,7 @@ ggplot() +
 # Abrindo diretorio
 setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") #PC trabalho
 
-# Load your data
+# Load my data
 mack_selfs_2023_winter <- read.csv("INTERNAL_QC_MACwinter23_HAUL_24.05.csv")
 
 # Necessary packages 
@@ -306,13 +306,12 @@ ggplot() +
 
 
 # abrindo o diretorio de trabalho
-setwd ("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2") #PC pessoal
-setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results") #PC trabalho
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/data_per_years") #PC trabalho
 
 
-# Load your data
+# Load my data
 
-mackerel_towing_data_2024 <- read.csv("mackerel_towing_data2024.csv")
+mackerel_towing_data_2011 <- read.csv("mackerel_towing_data2011.csv")
 
 
 # First, I want to create different dataset per year
@@ -326,6 +325,16 @@ for(year in names (data_by_year)) {
   write.csv (data_by_year[[year]], file = separated_years, row.names = FALSE)
 }
 
+# Second, I want to create different dataset per vessel
+
+unique (mackerel_towing_data$VE_ID) # Check unique values in variable
+
+data_by_vessel <- split(mackerel_towing_data, mackerel_towing_data$VE_ID) # Splitting by year
+
+for(VE_ID in names (data_by_vessel)) {
+  separated_vessels <- paste0("mackerel_towing_data", VE_ID, ".csv")
+  write.csv (data_by_vessel[[VE_ID]], file = separated_vessels, row.names = FALSE)
+}
 
 # Necessary packages 
 
@@ -339,7 +348,8 @@ library(ggrepel)  # To label countries
 library(viridis)
 
 
-# Map
+# Mapa do ano todo #
+
 
 world <- ne_countries(scale = "medium", returnclass = "sf") # Mapa do mundo; filtrar países relevantes
 
@@ -349,15 +359,15 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Inclui Noruega
 
 
-data_sf <- st_as_sf(mackerel_towing_data_2024, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
+data_sf <- st_as_sf(mackerel_towing_data_2011, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
 
 
 bbox_data <- st_bbox(data_sf) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
 
-# Define your desired coastal area (adjust these numbers as needed)
+# Define my desired coastal area (adjust these numbers as needed)
 norway_coast_bbox <- c(xmin = 4, xmax = 6, ymin = 58, ymax = 63)
 
-# Create a union bounding box that covers both the data and your desired coastal region
+# Create a union bounding box that covers both the data and my desired coastal region
 final_bbox <- c(
   xmin = min(bbox_data["xmin"], norway_coast_bbox["xmin"]),
   xmax = max(bbox_data["xmax"], norway_coast_bbox["xmax"]),
@@ -366,15 +376,14 @@ final_bbox <- c(
 )
 
 
-plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2024") # CHECKING DATA DISTRIBUTION
+plot(st_geometry(data_sf), col = "blue", pch = 20, main = "Distribution - 2004") # CHECKING DATA DISTRIBUTION
 
 
 # Mapa Plotter já com o shapefile do ICES
 
 
-# Set working directory for the ICES shapefile (use the correct one for your machine)
+# Set working directory for the ICES shapefile
 setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas")  # PC trabalho
-setwd("C:/Users/Iohara Quirino/OneDrive/Área de Trabalho/PhD/chapters/chapter_2")  # PC pessoal
 
 
 ICES_Areas<- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
@@ -386,7 +395,7 @@ ICES_Areas <- st_make_valid(ICES_Areas)
 
 
 # Transformar data_sf em um objeto sf usando as colunas de longitude e latitude
-data_sf <- st_as_sf(mackerel_towing_data_2024, coords = c("lon", "lat"), crs = 4326) 
+data_sf <- st_as_sf(mackerel_towing_data_2011, coords = c("lon", "lat"), crs = 4326) 
 
 data_filtered <- data_sf
 
@@ -407,7 +416,7 @@ ggplot() +
     pad_y = unit(0.5, "cm"),
     style = north_arrow_fancy_orienteering()
   ) +
-  ggtitle("Towings - 2024") +
+  ggtitle("Towings - 2011") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "lightblue", color = NA),
@@ -424,17 +433,88 @@ ggplot() +
   coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
            ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
 
+#OU#
+# Mesmo codigo considerando mes e vessel especifico para visualizar melhor #
+
+# Map
+
+library(ggplot2)
+library(sf)
+library(dplyr)
+
+# Carregar os dados mundiais e definir os países vizinhos ao Reino Unido
+world <- ne_countries(scale = "medium", returnclass = "sf")
+europe <- world[world$continent == "Europe", ]
+uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France", 
+                                        "Belgium", "Netherlands", "Germany", "Norway"), ]
+
+# Converter os dados de towing para um objeto sf
+data_sf <- st_as_sf(mackerel_towing_data_2004, coords = c("lon", "lat"), crs = 4326)
+
+# Carregar o shapefile do ICES
+ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
+ICES_Areas <- st_make_valid(ICES_Areas)  # Corrigir geometrias inválidas, se houver
+
+# Definir os parâmetros do filtro
+month_spc <- c (10, 12)   # October and December
+vessel_spc <- "11"  # Nome do vessel desejado
+
+# Filtrar os dados para o mês e vessel específicos
+data_filtered <- data_sf %>%
+  filter(month %in% month_spc & VE_ID == vessel_spc)
+
+# Garantir que temos dados filtrados antes de calcular a bounding box
+if (nrow(data_filtered) > 0) {
+  bbox_filtered <- st_bbox(data_filtered)  # Ajustar limites dinamicamente
+} else {
+  bbox_filtered <- st_bbox(data_sf)  # Se não houver dados, manter a bounding box geral
+}
+
+# Criar o mapa
+ggplot() +
+  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
+  geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
+  geom_sf(data = data_filtered, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +
+  scale_color_manual(values = c("red", "orange", "purple", "yellow","magenta", "green", "lightsalmon3", "indianred3", "plum4"), name = "Month") +
+  annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
+  annotation_north_arrow(
+    location = "tl",
+    which_north = "true",
+    pad_x = unit(0.5, "cm"),
+    pad_y = unit(0.5, "cm"),
+    style = north_arrow_fancy_orienteering()
+  ) +
+  ggtitle(paste("Towings 2004 - months 10, 12", "- Vessel:", vessel_spc)) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "lightblue", color = NA),
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.background = element_rect(fill = "white", color = NA),
+    axis.title = element_blank(),
+    axis.text = element_text(size = 10)
+  ) +
+  coord_sf(xlim = c(bbox_filtered["xmin"], bbox_filtered["xmax"]),
+           ylim = c(bbox_filtered["ymin"], bbox_filtered["ymax"]))  # Ajuste automático para os dados filtrados
 
 #.
 #.
 #.
 
-### Modificando agora todo o código os meses pelos VESSELS Plotter data ###
+### Mapping per VESSELS Towing Data ###
 
-# Load your data
-mackerel_towing_data <- read.csv("mackerel_data.csv")
+# abrindo o diretorio de trabalho
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Towing_data") #PC trabalho
 
-# Necessary packages
+
+# Load my data
+
+mackerel_towing <- read.csv("MAC_towing_tracks.csv")
+
 library(ggplot2)
 library(sf)
 library(dplyr)
@@ -442,70 +522,79 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(ggspatial)
 
-# Mapa do mundo e países relevantes
-world <- ne_countries(scale = "medium", returnclass = "sf")  # Mapa do mundo
-europe <- world[world$continent == "Europe", ]              # Mapa da Europa
-
-# Inclui Reino Unido e países vizinhos (incluindo Noruega)
+# Load world map data
+world <- ne_countries(scale = "medium", returnclass = "sf")  
 uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France", 
-                                        "Belgium", "Netherlands", "Germany", "Norway"), ] 
+                                        "Belgium", "Netherlands", "Germany", "Norway"), ]  
 
-# Converter os dados para sf (Simple Features)
-data_sf <- st_as_sf(mackerel_towing_data, coords = c("lon", "lat"), crs = 4326)
+# Load your dataset
+mackerel_towing <- read.csv("MAC_towing_tracks.csv")
 
-# Filtrar os dados por ano e embarcação, se necessário
-data_filtered <- data_sf %>%
-  filter(year %in% c(2021) & VE_ID =="22")  # Filtrar apenas o ano de interesse (2004)
+# Convert data to spatial format
+data_sf <- st_as_sf(mackerel_towing, coords = c("lon", "lat"), crs = 4326)
 
-# Carregar o shapefile do ICES
+# Set working directory for the ICES shapefile
+setwd("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/ICES_areas")  # PC trabalho
+
+# Load ICES shapefile
 ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
 
-# Mapa
-ggplot() +
-  # Camada do mapa base com preenchimento e contornos personalizados
-  geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", size = 0.3) +
+# Get only years where Vessel x exists
+years <- unique(mackerel_towing$year[mackerel_towing$VE_ID == "22"])
+
+# Loop through each year to generate and save a map
+for (yr in years) {
   
-  # Camada do ICES Statistical Areas com contornos
-  geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
+  # Filter data for the current year and Vessel x
+  data_filtered <- data_sf %>% filter(year == yr & VE_ID == "22")
   
-  # Camada com os pontos de towings por embarcação
-  geom_sf(data = data_filtered, aes(color = as.factor(VE_ID)), size = 1, alpha = 0.8) +  # `vessel` no lugar de `month`
+  # Define bounding box
+  bbox_data <- st_bbox(data_filtered) 
+  norway_coast_bbox <- c(xmin = 4, xmax = 6, ymin = 58, ymax = 63)
+  final_bbox <- c(
+    xmin = min(bbox_data["xmin"], norway_coast_bbox["xmin"]),
+    xmax = max(bbox_data["xmax"], norway_coast_bbox["xmax"]),
+    ymin = min(bbox_data["ymin"], norway_coast_bbox["ymin"]),
+    ymax = max(bbox_data["ymax"], norway_coast_bbox["ymax"])
+  )
   
-  # Paleta de cores refinada para as embarcações
-  scale_color_viridis_d(option = "A", name = "Vessel") +
+  # Create the map
+  p <- ggplot() +
+    geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
+    geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
+    geom_sf(data = data_filtered, aes(color = as.factor(month)), size = 1, alpha = 0.8) +  
+    scale_color_viridis_d(option = "A", name = "Month") +
+    annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
+    annotation_north_arrow(
+      location = "tl",  
+      which_north = "true",  
+      pad_x = unit(0.5, "cm"),  
+      pad_y = unit(0.5, "cm"),  
+      style = north_arrow_fancy_orienteering()
+    ) +
+    ggtitle(paste("Towings Vessel 22 -", yr)) +
+    theme_minimal() +
+    theme(
+      panel.background = element_rect(fill = "lightblue", color = NA),
+      panel.grid.major = element_line(color = "white", linewidth = 0.2),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5),
+      legend.position = "right",
+      legend.title = element_text(face = "bold"),
+      legend.background = element_rect(fill = "white", color = NA),
+      axis.title = element_blank(),
+      axis.text = element_text(size = 10)
+    ) +
+    coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
+             ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
   
-  # Tema mais estilizado
-  theme_minimal() +
-  theme(
-    panel.background = element_rect(fill = "lightblue", color = NA),  # Fundo do mapa em azul claro
-    panel.grid.major = element_line(color = "white", linewidth = 0.2),  # Linhas de grade suaves
-    panel.grid.minor = element_blank(),                                # Remove linhas menores
-    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),  # Título centralizado e em negrito
-    plot.subtitle = element_text(size = 12, hjust = 0.5),              # Subtítulo menor
-    legend.position = "right",                                         # Legenda à direita
-    legend.title = element_text(face = "bold"),                        # Título da legenda em negrito
-    legend.background = element_rect(fill = "white", color = NA),      # Fundo branco para a legenda
-    axis.title = element_blank(),                                     # Remove os rótulos dos eixos
-    axis.text = element_text(size = 10)                               # Texto dos eixos mais legível
-  ) +
+  # Save the map as an image
+  ggsave(filename = paste0("Towings_Vessel22_", yr, ".png"), plot = p, width = 10, height = 6, dpi = 300)
   
-  # Títulos informativos
-  ggtitle("Towings by Vessel - 2021") +
-  
-  # Escala e seta norte mais refinadas
-  annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +  # Escala no canto inferior esquerdo
-  
-  # Seta do norte clássica no canto superior esquerdo
-  annotation_north_arrow(
-    location = "tl",  # Top left (esquerda superior)
-    which_north = "true",  # Norte verdadeiro
-    pad_x = unit(0.5, "cm"),  # Espaçamento horizontal
-    pad_y = unit(0.5, "cm"),  # Espaçamento vertical
-    style = north_arrow_fancy_orienteering()  # Estilo clássico
-  ) +
-  
-  # Ajuste dos limites para um visual refinado
-  coord_sf(xlim = c(-7, 7), ylim = c(54, 63))  # Zoom ajustado para o Reino Unido e arredores
+  print(paste("Map for", yr, "saved!"))
+}
+
 
 #
 #
@@ -637,20 +726,68 @@ cat("\n✅ O gráfico do vessel", selected_vessel, "para os anos", start_year, "
 #
 #
 
-# Overlapping Self-sampling data and Plotter Data #
+# Overlapping Self-sampling data, Marks data with Plotter Data #
 
 # abrindo o diretorio de trabalho para Plotter Data
-setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results")
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Towing_data/data_per_years")
 
 # Load Plotter Data 
-mackerel_towing_2018 <- read.csv("mackerel_towing_data2018.csv")
+mackerel_towing_2020 <- read.csv("mackerel_towing_data2020.csv")
+
+# Unify files of Self-sampling Data #
+
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") # Plotter Data diretorio
+
+# Lista todos os arquivos CSV na pasta que seguem um padrão (ex: "2023_seasonX.csv")
+
+files <- list.files(path = "C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data", pattern = "2023_season.*\\.csv", full.names = TRUE)
+
+# Carregar e unir todos os datasets automaticamente
+library(data.table)
+all_data <- rbindlist(lapply(files, fread))
+
+# Exibir um resumo
+str(all_data)
+
+write.csv(all_data, "full_2023_selfsmpl.csv", row.names = FALSE)
 
 
 # abrindo o diretorio de trabalho Self-sampling data
-setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data") # Plotter Data diretorio
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/chapter2/self_sampling_data")
 
 # Load Self-sampling data 
-mackerel_hauls_2018 <- read.csv("mackerel_autumn2018_cuts.csv")
+mackerel_hauls_2023 <- read.csv("full_2023_selfsmpl.csv")
+
+
+# First, I want to create different dataset per year
+
+unique (mackerel_towing_data$year) # Check unique values in variable
+
+data_by_year <- split(mackerel_towing_data, mackerel_towing_data$year) # Splitting by year
+
+for(year in names (data_by_year)) {
+  separated_years <- paste0("mackerel_towing_data", year, ".csv")
+  write.csv (data_by_year[[year]], file = separated_years, row.names = FALSE)
+}
+
+# abrindo o diretorio de trabalho Marks Data
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Marks_data") # 
+
+# Load marks data 
+mack_mark <- read.csv("mack_marks_ve_id.csv")
+
+# First, I want to create different mark dataset per year
+
+unique (mack_mark$Year) # Check unique values in variable
+
+data_by_year <- split(mack_mark, mack_mark$Year) # Splitting by year
+
+for(year in names (data_by_year)) {
+  separated_years <- paste0("mack_mark", year, ".csv")
+  write.csv (data_by_year[[year]], file = separated_years, row.names = FALSE)
+}
+
+
 
 library(ggplot2)
 library(sf)
@@ -659,10 +796,16 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(ggspatial)
 
+# abrindo o diretorio de trabalho Marks Data
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Marks_data") # 
+
+# Load marks data
+mack_mark2020 <- read.csv("mack_mark2020.csv")
 
 # Converter os dados para objeto sf, utilizando as colunas de longitude e latitude
-haul_sf <- st_as_sf(mackerel_hauls_2018, coords = c("londd", "latdd"), crs = 4326)
-towing_sf <- st_as_sf(mackerel_towing_2018, coords = c("lon", "lat"), crs = 4326)
+haul_sf <- st_as_sf(mackerel_hauls_2023, coords = c("londd", "latdd"), crs = 4326) #self-sampling
+towing_sf <- st_as_sf(mackerel_towing_2020, coords = c("lon", "lat"), crs = 4326) #plotter
+marks_sf <- st_as_sf(mack_mark2020, coords = c("Long", "Lat"), crs = 4326) #marks 
 
 # Carregar o mapa base (mundo, Europa e países vizinhos)
 world <- ne_countries(scale = "medium", returnclass = "sf")
@@ -679,7 +822,18 @@ ICES_Areas <- st_read("ICES_Areas_20160601_cut_dense_3857.shp")
 ICES_Areas <- st_make_valid(ICES_Areas)  # Corrige possíveis geometria inválidas
 
 # Se desejar, calcule a bounding box dos seus dados (opcional)
-bbox <- st_bbox(haul_sf)  # Por exemplo, a partir dos dados de haul
+bbox_data <- st_bbox(towing_sf)
+
+# 🔹 Definir uma região costeira adicional (Noruega) para expandir a visualização
+norway_coast_bbox <- c(xmin = 4, xmax = 6, ymin = 58, ymax = 63)
+
+# 🔹 Criar um bounding box final que une os dois
+final_bbox <- c(
+  xmin = min(bbox_data["xmin"], norway_coast_bbox["xmin"]),
+  xmax = max(bbox_data["xmax"], norway_coast_bbox["xmax"]),
+  ymin = min(bbox_data["ymin"], norway_coast_bbox["ymin"]),
+  ymax = max(bbox_data["ymax"], norway_coast_bbox["ymax"])
+)
 
 # Criando o mapa com overlapping dos dois conjuntos:
 ggplot() +
@@ -689,14 +843,15 @@ ggplot() +
   # Shapefile do ICES com contornos
   geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.01, linetype = "dashed") +
   
+  
   # Camada com os pontos de towing (triângulos azuis)
   geom_sf(data = towing_sf, color = "purple3", shape = 17, size = 1.5, alpha = 0.05) +
   
   # Camada com os pontos de haul (círculos vermelhos)
-  geom_sf(data = haul_sf, color = "red", shape = 16, size = 1, alpha = 0.9) +
+  geom_sf(data = marks_sf, color = "yellow3", shape = 15, size = 1, alpha = 0.9) +
   
   # Título e legenda
-  ggtitle("2018 - Overlapping: Haul (red) vs Towing (blue)") +
+  ggtitle("2020 - Overlapping: Marks (red) vs Towing (purple)") +
   
   # Adicionando escala e seta norte
   annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
@@ -721,13 +876,12 @@ ggplot() +
     axis.title = element_blank(),
     axis.text = element_text(size = 10)
   ) +
+
+  coord_sf(xlim = c(final_bbox["xmin"], final_bbox["xmax"]),
+           ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
+
+
   
-  # Ajuste dos limites do mapa (você pode usar limites fixos ou os da bounding box)
-  coord_sf(xlim = c(-7, 7), ylim = c(54, 63))
-
-
-
-
 
 # Extra 
 
