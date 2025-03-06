@@ -1,37 +1,33 @@
 
 # Cleaning #
 
+# Map with all data
+
+# abrindo o diretorio de trabalho
+setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/Towing_data/data_per_vessels") #PC trabalho
+
+
+# Load your data
+
+towing_v10 <- read.csv("mackerel_towing_data10.csv")
+
+# Necessary packages 
 
 library(maps)
 library(mapdata)
 library(lubridate)
 library(tidyverse)
-library(sf) 
-
-
-# Map with all data
-
-# abrindo o diretorio de trabalho
-setwd ("C:/Users/SH01IQ/OneDrive - UHI/Desktop/iohara's phd/PhD_chapters/Chapter 2 - fishing areas changes/results/data_per_years") #PC trabalho
-
-
-# Load your data
-
-mackerel_towing_data_2004 <- read.csv("mackerel_towing_data2004.csv")
-
-# Necessary packages 
-
 library(ggplot2)
 library(sf)
 library(dplyr)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(ggspatial)
-library(ggrepel)  # To label countries
+library(ggrepel)
 library(viridis)
 
 
-# Mapa do ano todo #
+# Mapa do ano todo ou vessel #
 
 
 world <- ne_countries(scale = "medium", returnclass = "sf") # Mapa do mundo; filtrar países relevantes
@@ -117,14 +113,21 @@ ggplot() +
 
 
 
-
 #Subset data based on lat lon (to clean)
 
-mackerel_2 <- subset(mackerel_towing_data_2004, mackerel_towing_data_2004$lon>2.5 & mackerel_towing_data_2004$lon<7 & mackerel_towing_data_2004$lat<61 & mackerel_towing_data_2004$lat>58)
+#por ano apenas
+mackerel_1 <- subset(mackerel_towing_data_2004, mackerel_towing_data_2004$lon>2.5 & mackerel_towing_data_2004$lon<7 & mackerel_towing_data_2004$lat<61 & mackerel_towing_data_2004$lat>58)
 
+#por vessel + ano especifico
+v10_2017 <- towing_v10 %>%
+  filter(year == 2017 & lon > 0 & lon < 5 & lat > 59 & lat < 62)
+
+head(v10_2017)
+
+v10_2017$month #check the months
 
 # Converter o subset `mackerel_2` para sf
-data_sf <- st_as_sf(mackerel_2, coords = c("lon", "lat"), crs = 4326)
+data_sf <- st_as_sf(v10_2017, coords = c("lon", "lat"), crs = 4326)
 
 # Calcular a bounding box para que o mapa foque apenas no subset
 bbox_filtered <- st_bbox(data_sf)
@@ -134,7 +137,7 @@ ggplot() +
   geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
   geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
   geom_sf(data = data_sf, aes(color = as.factor(month)), size = 1.5, alpha = 0.5) +  # Apenas os dados do subset
-  scale_color_manual(values = c("green", "yellow", "black", "red"), name = "Month") +
+  scale_color_manual(values = c("yellow2", "black", "red"), name = "Month") +
   annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
   annotation_north_arrow(
     location = "tl",
@@ -143,7 +146,7 @@ ggplot() +
     pad_y = unit(0.5, "cm"),
     style = north_arrow_fancy_orienteering()
   ) +
-  ggtitle("Towings 2004 - To exclude - Subset 1 by Lon and Lat") +
+  ggtitle("Towings Vessel 10 - 2017 - Subset 1 by Lon and Lat") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "lightblue", color = NA),
@@ -161,6 +164,8 @@ ggplot() +
            ylim = c(bbox_filtered["ymin"], bbox_filtered["ymax"]))  # Ajuste automático do zoom para o subset
 
 
+write.csv(v10_2017, "v10_2017_subset1.csv", row.names = FALSE)
+
 
 #Entirely map without subsets
 
@@ -173,10 +178,14 @@ uk_neighbors <- world[world$name %in% c("United Kingdom", "Ireland", "France",
                                         "Belgium", "Netherlands", "Germany", "Norway"), ] # Inclui Noruega
 
 
-data_sf <- st_as_sf(mackerel_towing_data_2004, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
+towing_v10_2017 <- towing_v10 %>%
+  filter(year == 2017) # 
 
 
-bbox_data <- st_bbox(data_sf) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
+data_sf_all <- st_as_sf(towing_v10_2017, coords = c("lon", "lat"), crs = 4326) # Converter os dados de haul para sf
+
+
+bbox_data <- st_bbox(data_sf_all) # Calcular a bounding box dos dados de haul para ajustar os limites do mapa
 
 # Define your desired coastal area (adjust these numbers as needed)
 norway_coast_bbox <- c(xmin = 4, xmax = 6, ymin = 58, ymax = 63)
@@ -192,17 +201,22 @@ final_bbox <- c(
 
 mackerel_3 <- mackerel_towing_data_2004 %>%
   filter(! ((lon > 2.5 & lon < 7 & lat < 61 & lat > 58) |
-           lon < 1 & lon > -2 & lat < 59.5 & lat > 58) )
+           lon < 1 & lon > -2 & lat < 59.5 & lat > 58) ) # To filter more than 1 subset without filtering years
+
+
+v10_2017 <- towing_v10_2017 %>%
+  filter(!(lon > 0 & lon < 5 & lat > 59 & lat < 62)) # To filter just a subset filtering years
+
 
 
 # Converter o subset `mackerel_2` para sf
-data_sf <- st_as_sf(mackerel_3, coords = c("lon", "lat"), crs = 4326)
+data_sf <- st_as_sf(v10_2017, coords = c("lon", "lat"), crs = 4326)
 
 # Criar o mapa com o subset
 ggplot() +
   geom_sf(data = uk_neighbors, fill = "aliceblue", color = "darkblue", linewidth = 0.3) +
   geom_sf(data = ICES_Areas, color = "darkblue", fill = NA, linewidth = 0.2, linetype = "dashed") +
-  geom_sf(data = data_sf, aes(color = as.factor(month)), size = 0.5, alpha = 0.8) +  # Apenas os dados do subset
+  geom_sf(data = data_sf, aes(color = as.factor(month)), size = 1.5, alpha = 0.5) +  # Apenas os dados do subset
   scale_color_manual(values = c("red", "orange", "purple", "yellow","magenta", "green", "lightsalmon3", "indianred3", "plum4"), name = "Month") +
   annotation_scale(location = "bl", style = "ticks", text_cex = 0.8) +
   annotation_north_arrow(
@@ -212,7 +226,7 @@ ggplot() +
     pad_y = unit(0.5, "cm"),
     style = north_arrow_fancy_orienteering()
   ) +
-  ggtitle("Towings 2004 - Without subset 1 and 2") +
+  ggtitle("Towings vessel 10 - 2017 - Without subset 1") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "lightblue", color = NA),
@@ -230,7 +244,7 @@ ggplot() +
            ylim = c(final_bbox["ymin"], final_bbox["ymax"]))
 
 
-write.csv(mackerel_3, "mack_2004_withoutSubsets.csv", row.names = FALSE)
+write.csv(v10_2017, "v_10_withoutSubsets.csv", row.names = FALSE) #Para salvar
 
 
 
